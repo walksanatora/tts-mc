@@ -72,7 +72,7 @@ app = Flask(__name__)
 def post():
     with open("config", "rb") as cfg:
         config = pickle.load(cfg)
-    chat = request.get_data().decode().replace("("," left parenthesis ").replace(")"," right parenthesis ").replace(";"," ")
+    chat = request.get_data().decode().replace("("," ").replace(")"," ").replace(";"," ")
     print(chat)
     com = []
     words = chat.split(" ")
