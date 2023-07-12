@@ -7,7 +7,7 @@ from flask import Flask, request
 
 import pygame
 
-def play_tts(user, res, config):
+def play_tts(user, words, config):
     tts = "dectalk"
     conf = {}
     try:
@@ -17,9 +17,6 @@ def play_tts(user, res, config):
     except KeyError:
         pass
     command = "echo invalid tts system;exit 1"
-    words = res
-    if words[0] == "'" or words[0] == '"':
-        words = words[1:-1]
     match tts:
         case "dectalk":
             pre = conf.get("pre", "[:np]")
