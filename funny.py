@@ -24,7 +24,7 @@ def play_tts(user, res, config):
         case "dectalk":
             pre = conf.get("pre", "[:np]")
             print("pre" in conf, conf)
-            command = f'dectalk -fo "{user}.wav" -pre "[:err ignore] [:phoneme on] {shlex.quote(pre)[1:-1]}" -a "{words}"'
+            command = f'dectalk -fo "{user}.wav" -pre "[:err ignore] [:phoneme on] {shlex.quote(pre)[1:-1]}" -a {shlex.quote(words)}'
         case "sam":
             phonetic = conf.get("phonetic", "0") != "0"
             pitch = conf.get("pitch", "64")
@@ -37,7 +37,7 @@ def play_tts(user, res, config):
                 fmt += " -phonetic"
             if sing:
                 fmt += " -sing"
-            command = f"sam -wav '{user}.wav' {fmt} {words}"
+            command = f"sam -wav '{user}.wav' {fmt} {shlex.quote(words)}"
         case "none":
             command = f"exit 1"
     print(command)
@@ -72,7 +72,7 @@ app = Flask(__name__)
 def post():
     with open("config", "rb") as cfg:
         config = pickle.load(cfg)
-    chat = request.get_data().decode().replace("("," ").replace(")"," ").replace(";"," ")
+    chat = request.get_data().decode().replace("("," ").replace(")"," ").replace(";"," ").replace("`"," ")
     print(chat)
     com = []
     words = chat.split(" ")
@@ -97,7 +97,7 @@ def post():
         com = words[4:]
     else:
         com = words[1:]
-    res = " ".join(com).replace(";", "")
+    res = " ".join(com)
     ignore = False
     if len(com) == 0:
         print(com)
