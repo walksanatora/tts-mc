@@ -53,8 +53,6 @@ def play_tts(user, words, config):
         pass
     sys.stdout.flush()
 
-
-
 pygame.init()
 
 config = {}

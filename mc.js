@@ -1,4 +1,5 @@
 function main() {
+    context.releaseLock()
     const uname = Player.getPlayer().getName().getString();
     const message = event.text.getStringStripFormatting();
     const words = message.split(' ');
@@ -6,6 +7,11 @@ function main() {
 
     if (words.slice(1, 4).join(' ') === 'whispers to you:') {
         flag_whisper = words[0][0] !== '<';
+    }
+
+    if (words.slice(1, 4).join(' ') === 'joined the game') {
+        Time.sleep(5000)
+        Chat.say(`/voicechat invite ${words[0]}`)
     }
 
     if (words.slice(0, 3).join(' ') === 'You whisper to') {

@@ -1,4 +1,5 @@
 /*.wav
 /DUM
+venv/
 log.txt
 config
