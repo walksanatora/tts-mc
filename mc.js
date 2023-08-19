@@ -17,14 +17,14 @@ function main() {
     if (words.slice(0, 3).join(' ') === 'You whisper to') {
         return; // I am whispering...
     }
-
+    console.log(message)
     const client = Request.post("http://127.0.0.1:5000", message);
     const buf = client.text();
     if (buf !== 'empty' && flag_whisper) {
         if (words.slice(0, 4).join(' ') === uname + ' whispers to you:') {
             //Chat.toast('resp', buf);
         } else {
-            Chat.say(`/msg ${words[0]} ${buf}`);
+            Chat.say(`${buf}`);
         }
     }
 }

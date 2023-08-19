@@ -4,10 +4,13 @@ import pickle
 import shlex
 import sys
 from flask import Flask, request
+from gtts import gTTS
 
 import pygame
-
+import re
+replace_pattern = r"<.+?, ?[qweasd]+?>"
 def play_tts(user, words, config):
+    chat = re.sub(replace_pattern,"compiled_pattern",words)
     tts = "dectalk"
     conf = {}
     try:
@@ -35,6 +38,10 @@ def play_tts(user, words, config):
             if sing:
                 fmt += " -sing"
             command = f"sam -wav '{user}.wav' {fmt} {shlex.quote(words)}"
+        case "google":
+            tts = gTTS(words)
+            tts.save(f"{user}.wav")
+            command = "echo google"
         case "none":
             command = f"exit 1"
     print(command)
@@ -62,20 +69,22 @@ if not ("banned" in config):
     config["banned"] = []
 
 app = Flask(__name__)
-
 @app.route("/",methods=["POST"])
 def post():
     with open("config", "rb") as cfg:
         config = pickle.load(cfg)
-    chat = request.get_data()\
-        .decode()\
+    req = request.get_data().decode()
+    print("req:",req)
+    chat = req\
         .replace("("," ").replace(")"," ")\
         .replace(";"," ").replace("`"," ")\
         .replace("[m]","[:mode math on]")
-    print(chat)
+    print("chat:",chat)
     com = []
     words = chat.split(" ")
-    print(words)
+    if len(words) <= 1:
+        return "empty", 400
+    print("words:",words)
     if words[0:3] == ["You", "whisper", "to"]:
         print("I whispering this")
         sys.stdout.flush()
@@ -113,7 +122,7 @@ def post():
             case "help":
                 if len(com) < 3:
                     message = (
-                        "subcommands: tts,cfg, use !tts help [subcommand] for more help"
+                        "subcommands: tts,cfg,steal use !tts help [subcommand] for more help"
                     )
                 else:
                     match com[2]:
@@ -134,7 +143,7 @@ def post():
                             message = "invallid subcommand"
             case "tts":
                 tte = com[2]
-                if com[2] not in ["sam", "dectalk"]:
+                if com[2] not in ["sam", "dectalk","google"]:
                     tte = "off"
                 message = f"changed tts engine: {tte}"
                 conf["tts"] = tte
@@ -174,13 +183,26 @@ def post():
                     pass
                 message = f"cleared configs for {com[2]}"
                 config[f"<{com[2]}>"] = blank_cfg.copy()
+            case "steal":
+                if len(com) > 2:
+                    print(f"stealing from {com[2]} and giving to {words[0]}")
+                    config[words[0]] = config.get(f"<{com[2]}>")
+                    message = f"stole configs from {com[2]}"
+                else: message = f"you need to specify a username"
+            case "remap":
+                if len(com) > 2:
+                    print("remapping username")
+                    config[words[0]]["remap"] = com[2]
+                    message = f"remapped /msg to {com[2]}"
+                else: message = "you need to specify a username"
             case _:
+                print(f"failed to steal from {com[2]} and giving to {words[0]}")
                 message = "invalid command, use !tts help"
     with open("config", "wb") as cfg:
         pickle.dump(config, cfg)
     if ignore:
         sys.stdout.flush()
-        return message, 200
+        return "/msg "+ config.get(words[0],{}).get("remap",words[0][1:-1]) + " " + message, 200
     play_tts(words[0], res, config)
     return "empty",200
 
