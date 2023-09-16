@@ -22,7 +22,7 @@ def play_tts(user, words, config):
     command = "echo invalid tts system;exit 1"
     match tts:
         case "dectalk":
-            pre = conf.get("pre", "[:np]")
+            pre = conf.get("pre", "[:np]").replace("[m]","[:mode math on]").replace("[:nx]","[:nh][:dv ap 2511][:dv gv 652][:dv hs 50000][:volume set 10]")
             print("pre" in conf, conf)
             command = f'dectalk -fo "{user}.wav" -pre "[:err ignore] [:phoneme on] {shlex.quote(pre)[1:-1]}" -a {shlex.quote(words)}'
         case "sam":
@@ -78,7 +78,8 @@ def post():
     chat = req\
         .replace("("," ").replace(")"," ")\
         .replace(";"," ").replace("`"," ")\
-        .replace("[m]","[:mode math on]")
+        .replace("[m]","[:mode math on]")\
+        .replace("[:nx]","[:nh][:dv ap 2511][:dv gv 652][:dv hs 50000][:volume set 10]")
     print("chat:",chat)
     com = []
     words = chat.split(" ")
@@ -91,10 +92,29 @@ def post():
         return "empty",400
     if words[0][0] != "<":
         words[0] = f"<{words[0]}>"
-    if words[0] in config["banned"]:
-        print("user is tts banned")
-        sys.stdout.flush()
-        return "empty",400
+    
+    if words[0][1] == "@":
+        words[0] = words[0].replace("@","",1)
+
+    if words[0] == "<[Discord>":
+        print(chat)
+        message = re.search(r"\[Discord \| (.*?)\] (.*)",chat)
+        new_uname = message.group(1).replace(" ","_")
+        print("new username", new_uname)
+        new_body = message.group(2)+"\n"+("\n".join(chat.split("\n")[1:]))
+        print("new body",new_body)
+        if new_body.startswith(" Replying to @"):
+            print("Chat:",chatt)
+            new_body = " ".join(chat.split("\n")[1:])
+            print("removed reply",new_body)
+        words = ("a "+new_body).split(" ")       
+        words[0] = f"<{words[0][:-1]}>"
+        if words[1] == "(Replying":
+            words = " ".join(words).split(")")[1:].join(")").split(" ")
+    
+
+    print("post-processing", words)
+
     cout = 0
     flag_whisper = False
     if words[1:4] == ["whispers", "to", "you:"]:
@@ -171,6 +191,9 @@ def post():
                     pass
                 message = f"banned {com[2]}"
                 config["banned"].append(f"<{com[2]}>")
+            case "allow":
+                message = f"allowed {com[2]}"
+                config["allowed"].append(f"<{com[2]}>")
             case "unban":
                 if not words[0] == "<walksanator>":
                     message = "insufficent perms"
@@ -198,6 +221,18 @@ def post():
             case _:
                 print(f"failed to steal from {com[2]} and giving to {words[0]}")
                 message = "invalid command, use !tts help"
+    
+    if words[0] in config["banned"]:
+        print("user is tts banned")
+        sys.stdout.flush()
+        return "empty",400
+    # if config.get("allowed") is None: config["allowed"] = []
+    # if (not (words[0] in config["allowed"])) and (words[0] != "<walksanator>"):
+        # print("user is tts whitelisted")
+        # print(config["allowed"])
+        # sys.stdout.flush()
+        # return "empty",400
+    
     with open("config", "wb") as cfg:
         pickle.dump(config, cfg)
     if ignore:
